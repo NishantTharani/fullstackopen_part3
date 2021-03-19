@@ -1,0 +1,28 @@
+{
+  "name": "fullstackopen_part3",
+  "version": "1.0.0",
+  "description": "Part 3 of full stack open requires its own repo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "build:ui": "rm -rf build && cd ../fullstackopen/part2/phonebook/ && npm run build --prod && cp -r build ../../../fullstackopen_part3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NishantTharani/fullstackopen_part3.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NishantTharani/fullstackopen_part3/issues"
+  },
+  "homepage": "https://github.com/NishantTharani/fullstackopen_part3#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "morgan": "^1.10.0",
+    "nodemon": "^2.0.7"
+  }
+}
