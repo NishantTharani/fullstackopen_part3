@@ -1,6 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
+const Entry = require('./models/entry');
 
 const app = express();
 
@@ -29,31 +30,38 @@ let phonebook = [
 ]
 
 app.get('/api/persons', (req, res) => {
-    res.json(phonebook);
+    Entry.find({}).then(entries => {
+        res.json(entries);
+    })
 })
 
 app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id);
-    const entry = phonebook.find(entry => entry.id === id);
-    if (entry) {
-        res.json(entry);
-    } else {
-        res.status(404).end();
-    }
+    Entry.findById(req.params.id).then(entry => {
+        if (entry) {
+            res.json(entry);
+        } else {
+            res.status(404).end();
+        }
+    })
 })
 
-app.delete('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id);
-    phonebook = phonebook.filter(entry => entry.id !== id);
-    res.status(204).end();
+app.delete('/api/persons/:id', (req, res, next) => {
+    Entry.findByIdAndRemove(req.params.id)
+        .then(result => {
+            res.status(204).end();
+        }).catch(error => {
+            next(error);
+    })
 })
 
 app.get('/info', (req, res) => {
-    let out = `<p>Phonebook has info for ${phonebook.length} people</p><p>${new Date().toString()}</p>`;
-    res.send(out);
+    Entry.count().then(count => {
+        let out = `<p>Phonebook has info for ${count} people</p><p>${new Date().toString()}</p>`;
+        res.send(out);
+    })
 })
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
     const body = req.body;
 
     if (!body.name || !body.number) {
@@ -62,24 +70,40 @@ app.post('/api/persons', (req, res) => {
         })
     }
 
-    if (phonebook.find(entry => entry.name === body.name)) {
-        return res.status(400).json({
-            error: 'name must be unique'
-        })
-    }
-
-    const newId = Math.floor(Math.random() * 10000);
-
-    const entry = {
+    const entry = new Entry({
         name: body.name,
-        number: body.number,
-        id: newId
+        number: body.number
+    });
+
+    entry.save()
+        .then(savedEntry => {
+        res.json(savedEntry);
+    })
+        .catch(err => next(err));
+})
+
+app.put('/api/persons/:id', (req, res, next) => {
+    const body = req.body;
+
+    Entry.findByIdAndUpdate(req.params.id, {number: body.number}, {new: true, runValidators: true})
+        .then(updatedEntry => {
+            res.json(updatedEntry);
+        }).catch(err => {
+            next(err);
+    })
+})
+
+const errorHandler = (error, req, res, next) => {
+    console.error(error.message);
+
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({error: error.message});
     }
 
-    phonebook = phonebook.concat(entry);
+    next(error);
+}
 
-    res.json(phonebook);
-})
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
